@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 
@@ -39,14 +39,22 @@ app.add_middleware(
 # -------------------------------------------------
 
 @app.get("/signal")
-def signal(
-    symbol: str = Query(..., examples=["RELIANCE.NS"]),
-    timeframe: str = Query(..., examples=["INTRADAY"]),
-):
-    """
-    Get prediction for a single symbol & timeframe
-    """
-    return get_signal(symbol.upper(), timeframe.upper())
+def signal(symbol: str, timeframe: str = "DAILY"):
+    try:
+        if timeframe == "DAILY":
+            df = fetch_daily(symbol)
+        else:
+            df = fetch_intraday_clean(symbol)
+
+        # existing ML / signal logic
+        return result
+
+    except ValueError as e:
+        # Yahoo blocked / no data
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal error: {e}")
 
 
 @app.post(
